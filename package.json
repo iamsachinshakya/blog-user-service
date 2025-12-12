@@ -1,0 +1,73 @@
+{
+  "name": "blog-user-service",
+  "version": "1.0.0",
+  "description": "User management microservice for Blog App with authentication, profile, followers/following, and preferences management. Built with Express, TypeScript, PostgreSQL, and Drizzle ORM.",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only --env-file=.env src/index.ts",
+    "dev:all": "docker compose -f docker-compose.dev.yml up -d && pnpm dev",
+    "dev:stop": "docker compose -f docker-compose.dev.yml down",
+    "build": "tsc",
+    "start": "pnpm build && node --env-file=.env dist/index.js",
+    "start:all": "docker compose -f docker-compose.prod.yml up -d && pnpm start",
+    "start:stop": "docker compose -f docker-compose.prod.yml down",
+    "lint": "eslint . --ext .ts",
+    "db:generate": "drizzle-kit generate --config ./drizzle.config.ts",
+    "db:migrate": "ts-node-dev --transpile-only --env-file=.env src/app/db/migrate.ts",
+    "db:seed": "ts-node-dev --transpile-only --env-file=.env src/app/db/seeds.ts",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
+  },
+  "keywords": [
+    "express",
+    "typescript",
+    "postgresql",
+    "drizzle-orm",
+    "user-management",
+    "authentication",
+    "microservice",
+    "rest-api",
+    "jwt",
+    "followers",
+    "preferences"
+  ],
+  "author": "Sachin Shakya <sachin.shakya@example.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sachinshakya/blog-user-service.git"
+  },
+  "homepage": "https://github.com/sachinshakya/blog-user-service#readme",
+  "packageManager": "pnpm@10.18.3",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.8.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "drizzle-kit": "^0.31.7",
+    "drizzle-orm": "^0.44.7",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "kafkajs": "^2.2.4",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "postgres": "^3.4.7",
+    "uuid": "^13.0.0",
+    "winston": "^3.18.3",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.10.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "link:prettier\\eslint-config-prettier",
+    "eslint-plugin-prettier": "^5.5.4",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
+  }
+}
