@@ -28,3 +28,26 @@ export async function seedTable<
         logger.info(`✅ Inserted → ${String(uniqueKey)}: ${item[uniqueKey]}`);
     }
 }
+
+
+interface SeedConfig<TTable, TValue> {
+    table: TTable;
+    items: TValue[];
+    uniqueKey: keyof TValue;
+    label: string;
+}
+
+export async function seedMultipleTables(
+    db: any,
+    configs: SeedConfig<any, any>[]
+) {
+    for (const cfg of configs) {
+        logger.info(`\n🌱 Seeding: ${cfg.label}`);
+        logger.info(`----------------------------------`);
+
+        await seedTable(db, cfg.table, cfg.items, cfg.uniqueKey as any);
+
+        logger.info(`✅ Done → ${cfg.label}`);
+        logger.info(`----------------------------------\n`);
+    }
+}
