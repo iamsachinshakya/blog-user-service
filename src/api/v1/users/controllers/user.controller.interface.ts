@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 
 export interface IUserController {
 
+    getCurrentUser(req: Request, res: Response): Promise<Response>;
+
+
     /**
      * Get all users
      * @route GET /api/v1/users

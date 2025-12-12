@@ -5,11 +5,34 @@ import { IUserService } from "../services/user.service.interface";
 import { ApiResponse } from "../../common/utils/apiResponse";
 import { PAGINATION_PAGE_LIMIT } from "../../common/constants/constants";
 import { IUserController } from "./user.controller.interface";
+import { ApiError } from "../../common/utils/apiError";
+import { ErrorCode } from "../../common/constants/errorCodes";
 
 export class UserController implements IUserController {
   constructor(private readonly userService: IUserService) { }
 
-  //  Get all users
+  /* ---------------------------------------------------------
+     GET CURRENT USER
+  ----------------------------------------------------------*/
+  async getCurrentUser(req: Request, res: Response): Promise<Response> {
+    const userId = req?.user?.id;
+
+    if (!userId) {
+      throw new ApiError("Unauthorized user", 401, ErrorCode.UNAUTHORIZED);
+    }
+
+    const user = await this.userService.getUserById(userId);
+
+    if (!user) {
+      throw new ApiError("User not found", 404, ErrorCode.USER_NOT_FOUND);
+    }
+
+    return ApiResponse.success(res, "User fetched successfully", user);
+  }
+
+  /* ---------------------------------------------------------
+     GET ALL USERS
+  ----------------------------------------------------------*/
   async getAll(req: Request, res: Response): Promise<Response> {
     const query: IUsersQueryParams = {
       page: Number(req.query.page) || 1,
@@ -21,70 +44,178 @@ export class UserController implements IUserController {
     };
 
     const users = await this.userService.getAllUsers(query);
+
+    if (!users) {
+      throw new ApiError("No users found", 404, ErrorCode.USER_NOT_FOUND);
+    }
+
     return ApiResponse.success(res, "Users fetched successfully", users);
   }
 
-
-  //  Get user by ID
+  /* ---------------------------------------------------------
+     GET USER BY ID
+  ----------------------------------------------------------*/
   async getById(req: Request, res: Response): Promise<Response> {
-    const user = await this.userService.getUserById(req.params.id);
+    const { id } = req.params;
+
+    if (!id) {
+      throw new ApiError("User ID is required", 400, ErrorCode.BAD_REQUEST);
+    }
+
+    const user = await this.userService.getUserById(id);
+
+    if (!user) {
+      throw new ApiError("User not found", 404, ErrorCode.USER_NOT_FOUND);
+    }
+
     return ApiResponse.success(res, "User fetched successfully", user);
   }
 
-  //  Update account details
+  /* ---------------------------------------------------------
+     UPDATE ACCOUNT DETAILS
+  ----------------------------------------------------------*/
   async updateAccountDetails(req: Request, res: Response): Promise<Response> {
+    const { id } = req.params;
     const updates: IUpdateUserProfile = req.body;
-    const user = await this.userService.updateAccountDetails(
-      req.params.id,
-      updates
+
+    if (!id) {
+      throw new ApiError("User ID is required", 400, ErrorCode.BAD_REQUEST);
+    }
+
+    if (!updates || Object.keys(updates).length === 0) {
+      throw new ApiError("No update data provided", 400, ErrorCode.BAD_REQUEST);
+    }
+
+    const user = await this.userService.updateAccountDetails(id, updates);
+
+    if (!user) {
+      throw new ApiError("User not found", 404, ErrorCode.USER_NOT_FOUND);
+    }
+
+    return ApiResponse.success(
+      res,
+      "Account details updated successfully",
+      user
     );
-    return ApiResponse.success(res, "Account details updated successfully", user);
   }
 
-  //  Update avatar
+  /* ---------------------------------------------------------
+     UPDATE AVATAR
+  ----------------------------------------------------------*/
   async updateAvatar(req: Request, res: Response): Promise<Response> {
-    console.log("req.file", req.file);
-    console.log("body", req.body)
-    const user = await this.userService.updateAvatar(req.params.id, req.file!);
+    const { id } = req.params;
+
+    if (!id) {
+      throw new ApiError("User ID is required", 400, ErrorCode.BAD_REQUEST);
+    }
+
+    if (!req.file) {
+      throw new ApiError(
+        "Avatar image is required",
+        400,
+        ErrorCode.FILE_NOT_FOUND
+      );
+    }
+
+    const user = await this.userService.updateAvatar(id, req.file);
+
+    if (!user) {
+      throw new ApiError("User not found", 404, ErrorCode.USER_NOT_FOUND);
+    }
+
     return ApiResponse.success(res, "Avatar updated successfully", user);
   }
 
-  //  Delete user
+  /* ---------------------------------------------------------
+     DELETE USER
+  ----------------------------------------------------------*/
   async delete(req: Request, res: Response): Promise<Response> {
-    await this.userService.deleteUser(req.params.id);
+    const { id } = req.params;
+
+    if (!id) {
+      throw new ApiError("User ID is required", 400, ErrorCode.BAD_REQUEST);
+    }
+
+    const deleted = await this.userService.deleteUser(id);
+
+    if (!deleted) {
+      throw new ApiError("User not found", 404, ErrorCode.USER_NOT_FOUND);
+    }
+
     return ApiResponse.success(res, "User deleted successfully", null, 204);
   }
 
-  //  Follow a user
+  /* ---------------------------------------------------------
+     FOLLOW USER
+  ----------------------------------------------------------*/
   async followUser(req: Request, res: Response): Promise<Response> {
     const userId = req.user?.id;
     const { targetUserId } = req.params;
 
-    await this.userService.followUser(userId!, targetUserId);
-    return ApiResponse.success(res, "User followed successfully", null, 200);
+    if (!userId) {
+      throw new ApiError("Unauthorized user", 401, ErrorCode.UNAUTHORIZED);
+    }
+
+    if (!targetUserId) {
+      throw new ApiError("Target user ID is required", 400, ErrorCode.BAD_REQUEST);
+    }
+
+    await this.userService.followUser(userId, targetUserId);
+
+    return ApiResponse.success(res, "User followed successfully");
   }
 
-  //  Unfollow a user
+  /* ---------------------------------------------------------
+     UNFOLLOW USER
+  ----------------------------------------------------------*/
   async unfollowUser(req: Request, res: Response): Promise<Response> {
     const userId = req.user?.id;
     const { targetUserId } = req.params;
 
-    await this.userService.unfollowUser(userId!, targetUserId);
-    return ApiResponse.success(res, "User unfollowed successfully", null, 200);
+    if (!userId) {
+      throw new ApiError("Unauthorized user", 401, ErrorCode.UNAUTHORIZED);
+    }
+
+    if (!targetUserId) {
+      throw new ApiError("Target user ID is required", 400, ErrorCode.BAD_REQUEST);
+    }
+
+    await this.userService.unfollowUser(userId, targetUserId);
+
+    return ApiResponse.success(res, "User unfollowed successfully");
   }
 
-  //  Get followers
+  /* ---------------------------------------------------------
+     GET FOLLOWERS
+  ----------------------------------------------------------*/
   async getFollowers(req: Request, res: Response): Promise<Response> {
     const { id } = req.params;
+
+    if (!id) {
+      throw new ApiError("User ID is required", 400, ErrorCode.BAD_REQUEST);
+    }
+
     const followers = await this.userService.getFollowers(id);
+
     return ApiResponse.success(res, "Followers fetched successfully", followers);
   }
 
-  //  Get following
+  /* ---------------------------------------------------------
+     GET FOLLOWING
+  ----------------------------------------------------------*/
   async getFollowing(req: Request, res: Response): Promise<Response> {
     const { id } = req.params;
-    const following = await this.userService.getFollowing(id);
-    return ApiResponse.success(res, "Following users fetched successfully", following);
-  }
 
+    if (!id) {
+      throw new ApiError("User ID is required", 400, ErrorCode.BAD_REQUEST);
+    }
+
+    const following = await this.userService.getFollowing(id);
+
+    return ApiResponse.success(
+      res,
+      "Following users fetched successfully",
+      following
+    );
+  }
 }

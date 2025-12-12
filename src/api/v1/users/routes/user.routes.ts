@@ -18,6 +18,20 @@ const userRepository = new UserRepository();
 const userService = new UserService(userRepository);
 const userController = new UserController(userService);
 
+
+
+/**
+ * @route   GET /api/v1/users/current-user
+ * @desc    Get details of the logged-in user
+ * @access  Private
+ */
+userRouter.get(
+  "/me",
+  authenticateJWT,
+  asyncHandler(userController.getCurrentUser.bind(userController))
+);
+
+
 /**
  * @route   GET /api/v1/users
  * @desc    Get all users
@@ -28,6 +42,30 @@ userRouter.get(
   authenticateJWT,
   requirePermission(PERMISSIONS.USER.READ),
   asyncHandler(userController.getAll.bind(userController))
+);
+
+/**
+ * @route   GET /api/v1/users/:id
+ * @desc    Get user by ID
+ * @access  Private
+ */
+userRouter.get(
+  "/:id",
+  authenticateJWT,
+  requirePermission(PERMISSIONS.USER.READ),
+  asyncHandler(userController.getById.bind(userController))
+);
+
+/**
+ * @route   DELETE /api/v1/users/:id
+ * @desc    Delete user
+ * @access  Private (Admin only)
+ */
+userRouter.delete(
+  "/:id",
+  authenticateJWT,
+  requirePermission(PERMISSIONS.USER.DELETE),
+  asyncHandler(userController.delete.bind(userController))
 );
 
 /**
@@ -56,7 +94,6 @@ userRouter.patch(
   validateFileSchema(imageSchema),
   asyncHandler(userController.updateAvatar.bind(userController))
 );
-
 
 /**
  * @route   POST /api/v1/users/follow/:targetUserId
@@ -107,29 +144,5 @@ userRouter.get(
 );
 
 
-
-/**
- * @route   GET /api/v1/users/:id
- * @desc    Get user by ID
- * @access  Private
- */
-userRouter.get(
-  "/:id",
-  authenticateJWT,
-  requirePermission(PERMISSIONS.USER.READ),
-  asyncHandler(userController.getById.bind(userController))
-);
-
-/**
- * @route   DELETE /api/v1/users/:id
- * @desc    Delete user
- * @access  Private (Admin only)
- */
-userRouter.delete(
-  "/:id",
-  authenticateJWT,
-  requirePermission(PERMISSIONS.USER.DELETE),
-  asyncHandler(userController.delete.bind(userController))
-);
 
 export default userRouter;
