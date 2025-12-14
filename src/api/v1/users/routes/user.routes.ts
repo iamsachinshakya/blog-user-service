@@ -19,19 +19,6 @@ const userService = new UserService(userRepository);
 const userController = new UserController(userService);
 
 
-
-/**
- * @route   GET /api/v1/users/current-user
- * @desc    Get details of the logged-in user
- * @access  Private
- */
-userRouter.get(
-  "/me",
-  authenticateJWT,
-  asyncHandler(userController.getCurrentUser.bind(userController))
-);
-
-
 /**
  * @route   GET /api/v1/users
  * @desc    Get all users

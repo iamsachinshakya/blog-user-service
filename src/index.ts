@@ -1,3 +1,4 @@
+import { RedisClient } from "./api/v1/common/utils/redis.client";
 import app from "./app/app";
 import { env } from "./app/config/env";
 import { connectDB } from "./app/db/connectDB";
@@ -12,31 +13,36 @@ process.on("uncaughtException", (err: Error) => {
 
 const startServer = async () => {
     try {
-        // 1️⃣ Connect DB
+        // Connect DB
         await connectDB();
 
-        // 2️⃣ Start Kafka consumer
+        // Connect Redis
+        const redis = RedisClient.getInstance();
+
+        // Start Kafka consumer
         await kafkaConsumer.consumeUserCreated();
         logger.info("🎧 Kafka consumer listening for user-created events");
 
-        // 3️⃣ Start server
+        // Start server
         const server = app.listen(env.PORT, () => {
             logger.info(`🚀 Server running on http://localhost:${env.PORT} in ${env.NODE_ENV} mode`);
         });
 
-        // 4️⃣ Handle unhandled promise rejections
+        // Handle unhandled promise rejections
         process.on("unhandledRejection", async (err: any) => {
             logger.error("💥 Unhandled Rejection! Shutting down...");
             logger.error(err?.stack || err);
 
             await kafkaConsumer.disconnect();
+            await redis.disconnect();
             server.close(() => process.exit(1));
         });
 
-        // 5️⃣ Graceful shutdown on SIGTERM / SIGINT
+        // Graceful shutdown on SIGTERM / SIGINT
         const shutdown = async () => {
             logger.info("👋 SIGTERM/SIGINT received. Shutting down gracefully...");
             await kafkaConsumer.disconnect();
+            await redis.disconnect();
             server.close(() => logger.info("💤 Server and Kafka consumer stopped"));
         };
 

@@ -1,13 +1,17 @@
 services:
-  # ------------------- USER DB -------------------
+  # ------------------- USER POSTGRES -------------------
   db:
     image: postgres:16
     container_name: blog_user_postgres
     restart: always
     env_file:
       - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5433:5432" # maps host port 5433 → container 5432
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - user_dbdata:/var/lib/postgresql/data
     healthcheck:
@@ -21,11 +25,16 @@ services:
     image: redis:8
     container_name: blog_user_redis
     restart: always
+    env_file:
+      - .env
     ports:
-      - "6382:6379" # maps host port 6382 → container 6379
-    command: redis-server --appendonly yes
+      - "${REDIS_PORT}:6379"
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD}
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5

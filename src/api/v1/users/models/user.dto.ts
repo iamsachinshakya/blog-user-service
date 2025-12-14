@@ -1,3 +1,4 @@
+import { IQueryParams } from "../../common/models/common.dto";
 import { ISocialLinks, IUserPreferences, UserRole, UserStatus } from "./user.entity";
 
 export interface IAuthUser {
@@ -26,13 +27,4 @@ export interface ICreateUserData {
     role: UserRole;
     bio: string;
     password: string;
-}
-
-export interface IUsersQueryParams {
-    page?: number;
-    limit?: number;
-    search?: string;
-    role?: UserRole;
-    sortBy?: string;
-    sortOrder?: "asc" | "desc";
 }

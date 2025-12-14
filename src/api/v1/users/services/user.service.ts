@@ -1,9 +1,7 @@
-import { PAGINATION_PAGE_LIMIT } from "../../common/constants/constants";
 import { ErrorCode } from "../../common/constants/errorCodes";
-import { PaginatedData, PaginationMeta } from "../../common/dto/common.dto";
+import { IQueryParams, PaginatedData } from "../../common/models/common.dto";
 import { ApiError } from "../../common/utils/apiError";
 import {
-  IUsersQueryParams,
   IUpdateUserProfile
 } from "../models/user.dto";
 import { IUserEntity } from "../models/user.entity";
@@ -15,9 +13,16 @@ export class UserService implements IUserService {
   constructor(private readonly userRepo: IUserRepository) { }
 
   /* -------------------------------------------------------------------------- */
+  /*                               Create User                                  */
+  /* -------------------------------------------------------------------------- */
+  createUser(data: IUserEntity): Promise<IUserEntity | null> {
+    return this.userRepo.create(data);
+  }
+
+  /* -------------------------------------------------------------------------- */
   /*                               GET ALL USERS                                */
   /* -------------------------------------------------------------------------- */
-  async getAllUsers(query: IUsersQueryParams): Promise<PaginatedData<IUserEntity>> {
+  async getAllUsers(query: IQueryParams): Promise<PaginatedData<IUserEntity>> {
     return await this.userRepo.findAll(query);
   }
 

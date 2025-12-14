@@ -2,9 +2,9 @@ import { and, asc, desc, eq, ilike, sql } from "drizzle-orm";
 import { getDB } from "../../../../app/db/connectDB";
 import { users } from "../models/user.model";
 import { IUserRepository } from "./user.repository.interface";
-import { IUserEntity, UserRole } from "../models/user.entity";
-import { IUpdateUserProfile, IUsersQueryParams } from "../models/user.dto";
-import { PaginatedData } from "../../common/dto/common.dto";
+import { IUserEntity } from "../models/user.entity";
+import { IUpdateUserProfile } from "../models/user.dto";
+import { IQueryParams, PaginatedData } from "../../common/models/common.dto";
 
 export class UserRepository implements IUserRepository {
 
@@ -14,14 +14,9 @@ export class UserRepository implements IUserRepository {
     private normalizeUser(u: any): IUserEntity {
         return {
             id: u.id,
-            username: u.username,
-            email: u.email,
             fullName: u.fullName,
             avatar: u.avatar ?? null,
             bio: u.bio ?? "",
-            role: u.role,
-            status: u.status,
-            isVerified: u.isVerified,
             socialLinks: u.socialLinks ?? {
                 twitter: null,
                 linkedin: null,
@@ -40,17 +35,29 @@ export class UserRepository implements IUserRepository {
         };
     }
 
+
+    /* -------------------------------------------------------
+         CREATE USER
+     --------------------------------------------------------*/
+    async create(data: IUserEntity): Promise<IUserEntity | null> {
+        const [createdUser] = await getDB()
+            .insert(users)
+            .values(data)
+            .returning();
+
+        return createdUser ? this.normalizeUser(createdUser) : null;
+    }
+
     /* -------------------------------------------------------
         FIND ALL USERS (Pagination + Filters)
     --------------------------------------------------------*/
-    async findAll(params: IUsersQueryParams): Promise<PaginatedData<IUserEntity>> {
+    async findAll(params: IQueryParams): Promise<PaginatedData<IUserEntity>> {
         const {
             page = 1,
             limit = 10,
             search = "",
             sortBy = "createdAt",
             sortOrder = "desc",
-            role,
         } = params;
 
         const offset = (page - 1) * limit;
@@ -58,13 +65,10 @@ export class UserRepository implements IUserRepository {
 
         const conditions = [];
         if (search.trim()) conditions.push(ilike(users.fullName, `%${search}%`));
-        if (role) conditions.push(eq(users.role, role));
         const where = conditions.length ? and(...conditions) : undefined;
 
         let orderByColumn;
         switch (sortBy) {
-            case "username": orderByColumn = users.username; break;
-            case "email": orderByColumn = users.email; break;
             case "fullName": orderByColumn = users.fullName; break;
             case "createdAt":
             default: orderByColumn = users.createdAt; break;
@@ -109,18 +113,6 @@ export class UserRepository implements IUserRepository {
         return user ? this.normalizeUser(user) : null;
     }
 
-    /* -------------------------------------------------------
-        FIND BY USERNAME
-    --------------------------------------------------------*/
-    async findByUsername(username: string): Promise<IUserEntity | null> {
-        const normalized = username.toLowerCase();
-        const [user] = await getDB()
-            .select()
-            .from(users)
-            .where(eq(users.username, normalized));
-
-        return user ? this.normalizeUser(user) : null;
-    }
 
     /* -------------------------------------------------------
         UPDATE ACCOUNT DETAILS

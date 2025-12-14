@@ -1,8 +1,8 @@
 import { Kafka, Consumer, EachMessagePayload } from "kafkajs";
-import { IUserEntity, UserRole, UserStatus } from "../../api/v1/users/models/user.entity";
-import { getDB } from "../db/connectDB";
-import { users } from "../../api/v1/users/models/user.model";
+import { IUserEntity } from "../../api/v1/users/models/user.entity";
 import logger from "../utils/logger";
+import { UserService } from "../../api/v1/users/services/user.service";
+import { UserRepository } from "../../api/v1/users/repositories/user.repository";
 
 export interface UserCreatedEvent {
     id: string;
@@ -55,14 +55,9 @@ class KafkaConsumerService {
 
                     const user: IUserEntity = {
                         id: event.id,
-                        username: event.username,
-                        email: event.email,
                         fullName: event.username,
                         avatar: null,
                         bio: "",
-                        role: event.role as UserRole,
-                        status: event.status as UserStatus,
-                        isVerified: false,
                         socialLinks: { twitter: null, linkedin: null, github: null, website: null },
                         followers: [],
                         following: [],
@@ -74,9 +69,9 @@ class KafkaConsumerService {
                         createdAt: new Date(event.createdAt),
                         updatedAt: new Date(event.createdAt),
                     };
-
-                    const db = getDB();
-                    await db.insert(users).values(user);
+                    const userRepository = new UserRepository()
+                    const userService = new UserService(userRepository)
+                    await userService.createUser(user);
 
                     logger.info(`User saved to DB: ${user.id}`);
                 } catch (err: any) {

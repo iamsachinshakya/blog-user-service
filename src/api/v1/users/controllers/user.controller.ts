@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { IUpdateUserProfile, IUsersQueryParams } from "../models/user.dto";
-import { UserRole } from "../models/user.entity";
+import { IUpdateUserProfile } from "../models/user.dto";
 import { IUserService } from "../services/user.service.interface";
 import { ApiResponse } from "../../common/utils/apiResponse";
 import { PAGINATION_PAGE_LIMIT } from "../../common/constants/constants";
 import { IUserController } from "./user.controller.interface";
 import { ApiError } from "../../common/utils/apiError";
 import { ErrorCode } from "../../common/constants/errorCodes";
+import { IQueryParams } from "../../common/models/common.dto";
 
 export class UserController implements IUserController {
   constructor(private readonly userService: IUserService) { }
@@ -34,11 +34,10 @@ export class UserController implements IUserController {
      GET ALL USERS
   ----------------------------------------------------------*/
   async getAll(req: Request, res: Response): Promise<Response> {
-    const query: IUsersQueryParams = {
+    const query: IQueryParams = {
       page: Number(req.query.page) || 1,
       limit: Number(req.query.limit) || PAGINATION_PAGE_LIMIT,
       search: (req.query.search as string) || "",
-      role: (req.query.role as UserRole) || null,
       sortBy: (req.query.sortBy as string) || "createdAt",
       sortOrder: (req.query.sortOrder as "asc" | "desc") || "desc",
     };

@@ -32,14 +32,9 @@ export interface ISocialLinks {
  */
 export interface IUserEntity {
     id: string;
-    username: string;
-    email: string;
     fullName: string;
     avatar: string | null;
     bio: string;
-    role: UserRole;
-    status: UserStatus;
-    isVerified: boolean;
     socialLinks: ISocialLinks;
     followers: string[];
     following: string[];
@@ -47,3 +42,4 @@ export interface IUserEntity {
     createdAt: Date;
     updatedAt: Date;
 }
+

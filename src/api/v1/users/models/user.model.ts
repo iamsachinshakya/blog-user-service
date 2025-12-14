@@ -16,27 +16,10 @@ export const users = pgTable("users", {
     id: uuid("id")
         .defaultRandom()
         .primaryKey(),
-    username: varchar("username", { length: 30 }).notNull(),
-    email: varchar("email", { length: 255 }).notNull(),
 
     fullName: text("full_name").notNull(),
     avatar: text("avatar"),
     bio: varchar("bio", { length: 500 }).default(""),
-
-    role: text("role")
-        .$type<UserRole>()
-        .default(UserRole.USER)
-        .notNull(),
-
-    status: text("status")
-        .$type<UserStatus>()
-        .default(UserStatus.ACTIVE)
-        .notNull(),
-
-    isVerified: boolean("is_verified")
-        .default(false)
-        .notNull(),
-
 
     socialLinks: jsonb("social_links")
         .$type<ISocialLinks>()

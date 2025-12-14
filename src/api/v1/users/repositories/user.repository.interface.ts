@@ -1,13 +1,16 @@
 import { IUserEntity } from "../models/user.entity";
-import { IUsersQueryParams, IUpdateUserProfile } from "../models/user.dto";
-import { PaginatedData } from "../../common/dto/common.dto";
+import { IUpdateUserProfile } from "../models/user.dto";
+import { IQueryParams, PaginatedData } from "../../common/models/common.dto";
 
 export interface IUserRepository {
+
+  create(data: IUserEntity): Promise<IUserEntity | null>;
+
   /* -------------------------------------------------------------------------- */
   /*                                 FIND ALL USERS                              */
   /* -------------------------------------------------------------------------- */
   findAll(
-    params: IUsersQueryParams
+    params: IQueryParams
   ): Promise<PaginatedData<IUserEntity>>;
 
   /* -------------------------------------------------------------------------- */
