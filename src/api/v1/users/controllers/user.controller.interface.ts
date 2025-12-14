@@ -1,9 +1,12 @@
 import { Request, Response } from "express";
 
 export interface IUserController {
-
-    getCurrentUser(req: Request, res: Response): Promise<Response>;
-
+    /**
+    * Get user profile by ID
+    * @route GET /api/v1/users/profile/:id
+    * @access Private (Admin only)
+    */
+    getUserProfile(req: Request, res: Response): Promise<Response>;
 
     /**
      * Get all users

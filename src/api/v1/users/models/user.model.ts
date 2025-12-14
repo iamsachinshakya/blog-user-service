@@ -10,7 +10,7 @@ import {
 
 } from "drizzle-orm/pg-core";
 
-import { UserRole, UserStatus, ISocialLinks, IUserPreferences } from "./user.entity";
+import { ISocialLinks, IUserPreferences } from "./user.entity";
 
 export const users = pgTable("users", {
     id: uuid("id")

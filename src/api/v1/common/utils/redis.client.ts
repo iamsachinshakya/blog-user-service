@@ -92,6 +92,16 @@ export class RedisClient {
         }
     }
 
+    async ping(): Promise<boolean> {
+        try {
+            await this.client.ping();
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+
     async disconnect(): Promise<void> {
         try {
             await this.client.quit();

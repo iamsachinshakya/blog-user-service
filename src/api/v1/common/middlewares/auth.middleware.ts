@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/apiError";
+import { verifyToken } from "../utils/jwt.util";
 import { env } from "../../../../app/config/env";
 import { ErrorCode } from "../constants/errorCodes";
-import { IAuthUser } from "../../users/models/user.dto";
-import { verifyToken } from "../utils/jwt.util";
+import { IAuthUser } from "../models/common.dto";
 
 /**
  * Middleware: Authenticate requests using JWT
@@ -69,9 +69,11 @@ export const authenticateJWT = asyncHandler(
 
         req.user = {
             id: decoded.id,
+            username: decoded.username,
             email: decoded.email,
             role: decoded.role,
-            status: decoded.status
+            status: decoded.status,
+            isVerified: decoded.isVerified
         };
 
         next();

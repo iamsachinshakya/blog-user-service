@@ -1,59 +1,111 @@
 import { IUserEntity } from "../models/user.entity";
-import { IUpdateUserProfile } from "../models/user.dto";
+import { IFollowCount, IFollowUser, IUpdateUser, IUserDashboard } from "../models/user.dto";
 import { IQueryParams, PaginatedData } from "../../common/models/common.dto";
 
+/**
+ * @interface IUserRepository
+ * Repository interface for managing user-related database operations.
+ * Includes CRUD operations, follow/unfollow functionality, and follower/following queries.
+ */
 export interface IUserRepository {
 
-  create(data: IUserEntity): Promise<IUserEntity | null>;
+  /**
+   * Create a new user in the database.
+   * @param data - User entity data
+   * @returns The created user or null if creation failed
+   */
+  create(data: IUserEntity): Promise<IUserDashboard | null>;
 
-  /* -------------------------------------------------------------------------- */
-  /*                                 FIND ALL USERS                              */
-  /* -------------------------------------------------------------------------- */
-  findAll(
-    params: IQueryParams
-  ): Promise<PaginatedData<IUserEntity>>;
+  /**
+   * Retrieve all users with optional pagination, search, and sorting.
+   * @param params - Query parameters (page, limit, search, sortBy, sortOrder)
+   * @returns Paginated list of users
+   */
+  findAll(params: IQueryParams): Promise<PaginatedData<IUserDashboard>>;
 
-  /* -------------------------------------------------------------------------- */
-  /*                                   FIND BY ID                                */
-  /* -------------------------------------------------------------------------- */
-  findById(userId: string): Promise<IUserEntity | null>;
+  /**
+   * Find a user by their unique ID.
+   * @param userId - User ID
+   * @returns The user entity or null if not found
+   */
+  findById(userId: string): Promise<IUserDashboard | null>;
 
-  /* -------------------------------------------------------------------------- */
-  /*                          UPDATE ACCOUNT DETAILS (PROFILE)                   */
-  /* -------------------------------------------------------------------------- */
-  updateAccountDetails(
+  /**
+   * Update a user's account details.
+   * @param userId - User ID
+   * @param updates - Partial user data to update
+   * @returns The updated fields or null if update failed
+   */
+  updateAccountById(
     userId: string,
-    updates: Partial<IUpdateUserProfile>
-  ): Promise<IUserEntity | null>;
+    updates: Partial<IUpdateUser>
+  ): Promise<Partial<IUpdateUser> | null>;
 
-  /* -------------------------------------------------------------------------- */
-  /*                           GENERIC UPDATE (UPDATE BY ID)                     */
-  /* -------------------------------------------------------------------------- */
-  updateById(
-    userId: string,
-    updates: Partial<IUserEntity>
-  ): Promise<IUserEntity | null>;
-
-  /* -------------------------------------------------------------------------- */
-  /*                                    DELETE                                   */
-  /* -------------------------------------------------------------------------- */
+  /**
+   * Delete a user by ID.
+   * @param userId - User ID
+   * @returns True if deletion was successful, false otherwise
+   */
   deleteById(userId: string): Promise<boolean>;
 
-  /* -------------------------------------------------------------------------- */
-  /*                               FOLLOW SYSTEM                                 */
-  /* -------------------------------------------------------------------------- */
-  addFollower(targetUserId: string, followerId: string): Promise<void>;
+  /**
+   * Add a follower to a user's follower list.
+   * @param targetUserId - ID of the user to be followed
+   * @param followerId - ID of the follower
+   * @returns True if successful, false otherwise
+   */
+  addFollower(targetUserId: string, followerId: string): Promise<boolean>;
 
-  addFollowing(userId: string, targetUserId: string): Promise<void>;
+  /**
+   * Add a following relationship for a user.
+   * @param userId - ID of the user following
+   * @param targetUserId - ID of the user being followed
+   * @returns True if successful, false otherwise
+   */
+  addFollowing(userId: string, targetUserId: string): Promise<boolean>;
 
-  removeFollower(targetUserId: string, followerId: string): Promise<void>;
+  /**
+   * Remove a follower from a user's follower list.
+   * @param targetUserId - ID of the user being unfollowed
+   * @param followerId - ID of the follower to remove
+   * @returns True if successful, false otherwise
+   */
+  removeFollower(targetUserId: string, followerId: string): Promise<boolean>;
 
-  removeFollowing(userId: string, targetUserId: string): Promise<void>;
+  /**
+   * Remove a following relationship for a user.
+   * @param userId - ID of the user
+   * @param targetUserId - ID of the user being unfollowed
+   * @returns True if successful, false otherwise
+   */
+  removeFollowing(userId: string, targetUserId: string): Promise<boolean>;
 
-  /* -------------------------------------------------------------------------- */
-  /*                        GET FOLLOWERS / GET FOLLOWING                        */
-  /* -------------------------------------------------------------------------- */
-  findFollowers(userId: string): Promise<IUserEntity[]>;
+  /**
+   * Get a list of followers for a user.
+   * @param userId - User ID
+   * @returns Array of follower user entities
+   */
+  findFollowers(userId: string): Promise<IFollowUser[]>;
 
-  findFollowing(userId: string): Promise<IUserEntity[]>;
+  /**
+   * Get a list of users a user is following.
+   * @param userId - User ID
+   * @returns Array of following user entities
+   */
+  findFollowing(userId: string): Promise<IFollowUser[]>;
+
+  /**
+  * Check if a user is following a target user
+  * @param userId - ID of the follower
+  * @param targetUserId - ID of the target user
+  * @returns true if userId is already following targetUserId
+  */
+  isFollowing(userId: string, targetUserId: string): Promise<boolean>
+
+  /**
+   * Get follower and following counts for a user.
+   * @param userId - User ID
+   * @returns Object containing followerCount and followingCount, or null if not found
+   */
+  getFollowCounts(userId: string): Promise<IFollowCount | null>;
 }

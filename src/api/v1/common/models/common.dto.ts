@@ -46,4 +46,5 @@ export interface IAuthUser {
     email: string;
     role: UserRole;
     status: AuthStatus;
+    isVerified: boolean;
 }

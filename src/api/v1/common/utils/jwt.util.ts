@@ -1,8 +1,8 @@
 import jwt, { JwtPayload, SignOptions } from "jsonwebtoken";
 import { env } from "../../../../app/config/env";
 import { ApiError } from "./apiError";
-import { IAuthUser } from "../../users/models/user.dto";
 import { parseExpiry } from "./common.util";
+import { IAuthUser } from "../models/common.dto";
 
 /**
  * Generate an access token

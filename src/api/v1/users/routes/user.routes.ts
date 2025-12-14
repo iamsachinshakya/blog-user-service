@@ -18,6 +18,16 @@ const userRepository = new UserRepository();
 const userService = new UserService(userRepository);
 const userController = new UserController(userService);
 
+/**
+ * @route   GET /api/v1/users/profile/:id
+ * @desc    Get all users
+ * @access  Private (Admin only)
+ */
+userRouter.get(
+  "/profile/:id",
+  authenticateJWT,
+  asyncHandler(userController.getUserProfile.bind(userController))
+);
 
 /**
  * @route   GET /api/v1/users

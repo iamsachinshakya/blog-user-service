@@ -1,36 +1,66 @@
 import { ErrorCode } from "../../common/constants/errorCodes";
 import { IQueryParams, PaginatedData } from "../../common/models/common.dto";
 import { ApiError } from "../../common/utils/apiError";
-import {
-  IUpdateUserProfile
-} from "../models/user.dto";
-import { IUserEntity } from "../models/user.entity";
+import { IFollowUser, IUpdateUser, IUserDashboard, IUserProfile } from "../models/user.dto";
+import { IUserEntity, UserRole, UserStatus } from "../models/user.entity";
 import { IUserRepository } from "../repositories/user.repository.interface";
 import { uploadOnCloudinary } from "../utils/cloudinary.util";
 import { IUserService } from "./user.service.interface";
 
+/**
+ * @class UserService
+ * Implements IUserService for user-related business logic.
+ * Handles CRUD, profile updates, avatar uploads, and follow/unfollow logic.
+ */
 export class UserService implements IUserService {
-  constructor(private readonly userRepo: IUserRepository) { }
+  constructor(private readonly userRepository: IUserRepository) { }
+
 
   /* -------------------------------------------------------------------------- */
-  /*                               Create User                                  */
+  /*                               GET USER PROFILE                               */
   /* -------------------------------------------------------------------------- */
-  createUser(data: IUserEntity): Promise<IUserEntity | null> {
-    return this.userRepo.create(data);
+  async getUserProfile(userId: string): Promise<IUserProfile> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new ApiError("User not found", 404, ErrorCode.USER_NOT_FOUND);
+
+    const counts = await this.userRepository.getFollowCounts(userId);
+
+    return {
+      ...user,
+      followersCount: counts?.followerCount ?? 0,
+      followingCount: counts?.followingCount ?? 0,
+      postsCount: 0,
+      role: UserRole.USER,
+      status: UserStatus.ACTIVE,
+      isVerified: false,
+      username: "",
+      email: "",
+    };
   }
 
   /* -------------------------------------------------------------------------- */
-  /*                               GET ALL USERS                                */
+  /*                                CREATE USER                                   */
   /* -------------------------------------------------------------------------- */
-  async getAllUsers(query: IQueryParams): Promise<PaginatedData<IUserEntity>> {
-    return await this.userRepo.findAll(query);
+  async createUser(data: IUserEntity): Promise<IUserDashboard> {
+    const createdUser = await this.userRepository.create(data);
+    if (!createdUser) throw new ApiError("Failed to create user", 400, ErrorCode.BAD_REQUEST);
+    return createdUser;
   }
 
   /* -------------------------------------------------------------------------- */
-  /*                                 GET BY ID                                  */
+  /*                               GET ALL USERS                                  */
   /* -------------------------------------------------------------------------- */
-  async getUserById(userId: string): Promise<IUserEntity> {
-    const user = await this.userRepo.findById(userId);
+  async getAllUsers(query: IQueryParams): Promise<PaginatedData<IUserDashboard>> {
+    const result = await this.userRepository.findAll(query);
+    if (!result?.data) throw new ApiError("No users found", 404, ErrorCode.USER_NOT_FOUND);
+    return result;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                               GET USER BY ID                                 */
+  /* -------------------------------------------------------------------------- */
+  async getUserById(userId: string): Promise<IUserDashboard> {
+    const user = await this.userRepository.findById(userId);
     if (!user) throw new ApiError("User not found", 404, ErrorCode.USER_NOT_FOUND);
     return user;
   }
@@ -38,150 +68,130 @@ export class UserService implements IUserService {
   /* -------------------------------------------------------------------------- */
   /*                           UPDATE ACCOUNT DETAILS                            */
   /* -------------------------------------------------------------------------- */
-  async updateAccountDetails(
-    userId: string,
-    body: IUpdateUserProfile
-  ): Promise<IUserEntity> {
-    const allowedFields: (keyof IUpdateUserProfile)[] = [
-      "email",
-      "fullName",
-      "bio",
-      "role",
-      "status",
-      "isVerified",
-      "socialLinks",
-      "preferences"
+  async updateAccount(userId: string, data: IUpdateUser): Promise<Partial<IUpdateUser>> {
+    const allowedFields: (keyof IUpdateUser)[] = [
+      "fullName", "bio", "socialLinks", "preferences"
     ];
 
-    const updates: Partial<IUpdateUserProfile> = {};
-
+    const updates: Partial<IUpdateUser> = {};
     for (const key of allowedFields) {
-      const value = body[key];
+      const value = data[key];
       if (value === undefined || value === null) continue;
-
-      // handle strings
-      if (typeof value === "string" && value.trim() !== "") {
-        updates[key] = value.trim() as any;
-      }
-
-      // handle objects (preferences, etc.)
-      if (typeof value === "object") {
-        updates[key] = value as any;
-      }
+      if (typeof value === "string" && value.trim() !== "") updates[key] = value.trim() as any;
+      if (typeof value === "object") updates[key] = value as any;
     }
 
     if (Object.keys(updates).length === 0) {
-      throw new ApiError(
-        "At least one valid field is required to update",
-        400,
-        ErrorCode.BAD_REQUEST
-      );
+      throw new ApiError("At least one valid field is required to update", 400, ErrorCode.BAD_REQUEST);
     }
 
-    // 🔍 Normalize email (optional)
-    if (updates.email) {
-      updates.email = updates.email.toLowerCase();
-    }
-
-    const updatedUser = await this.userRepo.updateAccountDetails(userId, updates);
+    const updatedUser = await this.userRepository.updateAccountById(userId, updates);
     if (!updatedUser) throw new ApiError("User not found", 404, ErrorCode.USER_NOT_FOUND);
 
     return updatedUser;
   }
 
   /* -------------------------------------------------------------------------- */
-  /*                                UPDATE AVATAR                                */
+  /*                                UPDATE AVATAR                                 */
   /* -------------------------------------------------------------------------- */
-  async updateAvatar(userId: string, file: Express.Multer.File): Promise<IUserEntity> {
-    if (!file?.buffer) {
-      throw new ApiError("Avatar file is missing", 400, ErrorCode.BAD_REQUEST);
-    }
+  async updateAvatar(userId: string, file: Express.Multer.File): Promise<Partial<IUpdateUser>> {
+    if (!file?.buffer) throw new ApiError("Avatar file is missing", 400, ErrorCode.BAD_REQUEST);
 
     const uploaded = await uploadOnCloudinary(file.buffer, userId, "avatars");
+    if (!uploaded?.secure_url) throw new ApiError("Failed to upload avatar", 400, ErrorCode.BAD_REQUEST);
 
-    if (!uploaded?.secure_url) {
-      throw new ApiError("Failed to upload avatar", 400, ErrorCode.BAD_REQUEST);
-    }
+    const updatedUser = await this.userRepository.updateAccountById(userId, { avatar: uploaded.secure_url });
+    if (!updatedUser) throw new ApiError("User not found", 404, ErrorCode.USER_NOT_FOUND);
 
-    const user = await this.userRepo.updateById(userId, {
-      avatar: uploaded.secure_url
-    });
-
-    if (!user) throw new ApiError("User not found", 404, ErrorCode.USER_NOT_FOUND);
-
-    return user;
+    return updatedUser;
   }
 
   /* -------------------------------------------------------------------------- */
-  /*                                  DELETE USER                                */
+  /*                                DELETE USER                                   */
   /* -------------------------------------------------------------------------- */
   async deleteUser(userId: string): Promise<boolean> {
-    const deleted = await this.userRepo.deleteById(userId);
+    const deleted = await this.userRepository.deleteById(userId);
     if (!deleted) throw new ApiError("User not found", 404, ErrorCode.USER_NOT_FOUND);
     return true;
   }
 
   /* -------------------------------------------------------------------------- */
-  /*                                 FOLLOW USER                                 */
+  /*                               FOLLOW USER                                    */
   /* -------------------------------------------------------------------------- */
-  async followUser(userId: string, targetUserId: string): Promise<void> {
+  async followUser(userId: string, targetUserId: string): Promise<boolean> {
     if (userId === targetUserId) {
       throw new ApiError("You cannot follow yourself", 400, ErrorCode.BAD_REQUEST);
     }
 
+    // Ensure both users exist
     const [user, targetUser] = await Promise.all([
-      this.userRepo.findById(userId),
-      this.userRepo.findById(targetUserId)
+      this.userRepository.findById(userId),
+      this.userRepository.findById(targetUserId)
     ]);
 
-    if (!user) throw new ApiError("User not found", 404, ErrorCode.USER_NOT_FOUND);
+    if (!user) {
+      throw new ApiError("User not found", 404, ErrorCode.USER_NOT_FOUND);
+    }
     if (!targetUser) {
       throw new ApiError("Target user not found", 404, ErrorCode.USER_NOT_FOUND);
     }
 
-    const alreadyFollowing = targetUser.followers?.includes(userId);
+    // Check if already following
+    const alreadyFollowing = await this.userRepository.isFollowing(userId, targetUserId);
     if (alreadyFollowing) {
       throw new ApiError("Already following this user", 409, ErrorCode.BAD_REQUEST);
     }
 
-    await Promise.all([
-      this.userRepo.addFollower(targetUserId, userId),
-      this.userRepo.addFollowing(userId, targetUserId)
+    // Add follower and following
+    const [addedFollower, addedFollowing] = await Promise.all([
+      this.userRepository.addFollower(targetUserId, userId),
+      this.userRepository.addFollowing(userId, targetUserId)
     ]);
-  }
 
-  /* -------------------------------------------------------------------------- */
-  /*                               UNFOLLOW USER                                 */
-  /* -------------------------------------------------------------------------- */
-  async unfollowUser(userId: string, targetUserId: string): Promise<void> {
-    if (userId === targetUserId) {
-      throw new ApiError("You cannot unfollow yourself", 400, ErrorCode.BAD_REQUEST);
+    if (!addedFollower || !addedFollowing) {
+      throw new ApiError("Failed to follow user", 500, ErrorCode.BAD_REQUEST);
     }
 
+    return true;
+  }
+
+
+  /* -------------------------------------------------------------------------- */
+  /*                               UNFOLLOW USER                                  */
+  /* -------------------------------------------------------------------------- */
+  async unfollowUser(userId: string, targetUserId: string): Promise<boolean> {
+    if (userId === targetUserId) throw new ApiError("You cannot unfollow yourself", 400, ErrorCode.BAD_REQUEST);
+
     const [user, targetUser] = await Promise.all([
-      this.userRepo.findById(userId),
-      this.userRepo.findById(targetUserId)
+      this.userRepository.findById(userId),
+      this.userRepository.findById(targetUserId)
     ]);
 
     if (!user) throw new ApiError("User not found", 404, ErrorCode.USER_NOT_FOUND);
-    if (!targetUser) {
-      throw new ApiError("Target user not found", 404, ErrorCode.USER_NOT_FOUND);
+    if (!targetUser) throw new ApiError("Target user not found", 404, ErrorCode.USER_NOT_FOUND);
+
+    const removedFollower = await this.userRepository.removeFollower(targetUserId, userId);
+    const removedFollowing = await this.userRepository.removeFollowing(userId, targetUserId);
+
+    if (!removedFollower || !removedFollowing) {
+      throw new ApiError("Failed to unfollow user", 500, ErrorCode.BAD_REQUEST);
     }
 
-    await Promise.all([
-      this.userRepo.removeFollower(targetUserId, userId),
-      this.userRepo.removeFollowing(userId, targetUserId)
-    ]);
+    return true;
   }
 
   /* -------------------------------------------------------------------------- */
-  /*                             GET FOLLOWERS / FOLLOWING                       */
+  /*                          GET FOLLOWERS / FOLLOWING                          */
   /* -------------------------------------------------------------------------- */
-  async getFollowers(userId: string): Promise<IUserEntity[]> {
-    return this.userRepo.findFollowers(userId);
+  async getFollowers(userId: string): Promise<IFollowUser[]> {
+    const followers = await this.userRepository.findFollowers(userId);
+    if (!followers) return [];
+    return followers;
   }
 
-  async getFollowing(userId: string): Promise<IUserEntity[]> {
-    return this.userRepo.findFollowing(userId);
+  async getFollowing(userId: string): Promise<IFollowUser[]> {
+    const following = await this.userRepository.findFollowing(userId);
+    if (!following) return [];
+    return following;
   }
 }
