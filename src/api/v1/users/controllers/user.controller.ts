@@ -5,20 +5,31 @@ import { PAGINATION_PAGE_LIMIT } from "../../common/constants/constants";
 import { IUserController } from "./user.controller.interface";
 import { ApiError } from "../../common/utils/apiError";
 import { ErrorCode } from "../../common/constants/errorCodes";
-import { IQueryParams } from "../../common/models/common.dto";
 import { IUpdateUser } from "../models/user.dto";
+import { IQueryParams } from "../../common/models/common.dto";
+import { email } from "zod";
+import { IAuthUser } from "../../auth/models/auth.dto";
 
 export class UserController implements IUserController {
   constructor(private readonly userService: IUserService) { }
 
   async getUserProfile(req: Request, res: Response): Promise<Response> {
     const { id } = req.params;
-    const authUser = req.user;
+    const authUser = req.user as IAuthUser;
 
     if (!authUser) throw new ApiError("Unauthorized", 401, ErrorCode.UNAUTHORIZED);
     if (!id) throw new ApiError("User ID is required", 400, ErrorCode.BAD_REQUEST);
 
-    const profile = await this.userService.getUserProfile(id);
+    let profile = await this.userService.getUserProfile(id);
+
+    profile = {
+      ...profile,
+      role: authUser.role,
+      status: authUser.status,
+      isVerified: authUser.isVerified,
+      username: authUser.username,
+      email: authUser.email,
+    }
 
     return ApiResponse.success(res, "User profile fetched successfully", profile);
   }

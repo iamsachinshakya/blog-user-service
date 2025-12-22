@@ -7,7 +7,7 @@ import cors from "cors";
 import { ApiError } from "../api/v1/common/utils/apiError";
 import { errorMiddleware } from "../api/v1/common/middlewares/error.middleware";
 import { ApiResponse } from "../api/v1/common/utils/apiResponse";
-import userRouter from "../api/v1/users/routes/user.routes";
+import { userRouter } from "../api/v1/users/routes/user.routes";
 
 const app = express();
 app.use(

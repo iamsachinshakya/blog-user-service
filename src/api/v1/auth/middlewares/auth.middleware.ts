@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from "express";
-import { asyncHandler } from "../utils/asyncHandler";
-import { ApiError } from "../utils/apiError";
+import { asyncHandler } from "../../common/utils/asyncHandler";
+import { ApiError } from "../../common/utils/apiError";
 import { verifyToken } from "../utils/jwt.util";
 import { env } from "../../../../app/config/env";
-import { ErrorCode } from "../constants/errorCodes";
-import { IAuthUser } from "../models/common.dto";
+import { ErrorCode } from "../../common/constants/errorCodes";
+import { IAuthUser } from "../models/auth.dto";
 
 /**
  * Middleware: Authenticate requests using JWT
@@ -12,7 +12,7 @@ import { IAuthUser } from "../models/common.dto";
  * - Verifies and decodes token payload
  * - Attaches `req.user` for downstream authorization checks
  */
-export const authenticateJWT = asyncHandler(
+export const authenticate = asyncHandler(
     async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
         const authHeader = req.header("Authorization");
 

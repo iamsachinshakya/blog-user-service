@@ -4,12 +4,12 @@ import { imageSchema, updateUserSchema } from "../validations/user.validation";
 import { UserRepository } from "../repositories/user.repository";
 import { UserService } from "../services/user.service";
 import { UserController } from "../controllers/user.controller";
-import { authenticateJWT } from "../../common/middlewares/auth.middleware";
-import { PERMISSIONS } from "../../common/constants/permission";
 import { validateBody, validateFileSchema } from "../../common/middlewares/validate.middleware";
-import { requirePermission } from "../../common/middlewares/requirePermission";
 import { asyncHandler } from "../../common/utils/asyncHandler";
 import { uploadSingle } from "../middleware/upload.middleware";
+import { authenticate } from "../../auth/middlewares/auth.middleware";
+import { authorize } from "../../permissions/middlewares/authorize.middleware";
+import { PERMISSIONS } from "../../permissions/constants/permission";
 
 export const userRouter = Router();
 
@@ -25,7 +25,7 @@ const userController = new UserController(userService);
  */
 userRouter.get(
   "/profile/:id",
-  authenticateJWT,
+  authenticate,
   asyncHandler(userController.getUserProfile.bind(userController))
 );
 
@@ -36,8 +36,8 @@ userRouter.get(
  */
 userRouter.get(
   "/",
-  authenticateJWT,
-  requirePermission(PERMISSIONS.USER.READ),
+  authenticate,
+  authorize(PERMISSIONS.USER.READ),
   asyncHandler(userController.getAll.bind(userController))
 );
 
@@ -48,8 +48,8 @@ userRouter.get(
  */
 userRouter.get(
   "/:id",
-  authenticateJWT,
-  requirePermission(PERMISSIONS.USER.READ),
+  authenticate,
+  authorize(PERMISSIONS.USER.READ),
   asyncHandler(userController.getById.bind(userController))
 );
 
@@ -60,8 +60,8 @@ userRouter.get(
  */
 userRouter.delete(
   "/:id",
-  authenticateJWT,
-  requirePermission(PERMISSIONS.USER.DELETE),
+  authenticate,
+  authorize(PERMISSIONS.USER.DELETE),
   asyncHandler(userController.delete.bind(userController))
 );
 
@@ -72,8 +72,8 @@ userRouter.delete(
  */
 userRouter.patch(
   "/:id",
-  authenticateJWT,
-  requirePermission(PERMISSIONS.USER.UPDATE),
+  authenticate,
+  authorize(PERMISSIONS.USER.UPDATE),
   validateBody(updateUserSchema),
   asyncHandler(userController.updateAccountDetails.bind(userController))
 );
@@ -85,8 +85,8 @@ userRouter.patch(
  */
 userRouter.patch(
   "/:id/avatar",
-  authenticateJWT,
-  requirePermission(PERMISSIONS.USER.UPDATE),
+  authenticate,
+  authorize(PERMISSIONS.USER.UPDATE),
   uploadSingle("avatar"),
   validateFileSchema(imageSchema),
   asyncHandler(userController.updateAvatar.bind(userController))
@@ -99,8 +99,8 @@ userRouter.patch(
  */
 userRouter.post(
   "/follow/:targetUserId",
-  authenticateJWT,
-  requirePermission(PERMISSIONS.USER.UPDATE),
+  authenticate,
+  authorize(PERMISSIONS.USER.UPDATE),
   asyncHandler(userController.followUser.bind(userController))
 );
 
@@ -111,8 +111,8 @@ userRouter.post(
  */
 userRouter.delete(
   "/unfollow/:targetUserId",
-  authenticateJWT,
-  requirePermission(PERMISSIONS.USER.UPDATE),
+  authenticate,
+  authorize(PERMISSIONS.USER.UPDATE),
   asyncHandler(userController.unfollowUser.bind(userController))
 );
 
@@ -123,8 +123,8 @@ userRouter.delete(
  */
 userRouter.get(
   "/:id/followers",
-  authenticateJWT,
-  requirePermission(PERMISSIONS.USER.READ),
+  authenticate,
+  authorize(PERMISSIONS.USER.READ),
   asyncHandler(userController.getFollowers.bind(userController))
 );
 
@@ -135,11 +135,7 @@ userRouter.get(
  */
 userRouter.get(
   "/:id/following",
-  authenticateJWT,
-  requirePermission(PERMISSIONS.USER.READ),
+  authenticate,
+  authorize(PERMISSIONS.USER.READ),
   asyncHandler(userController.getFollowing.bind(userController))
 );
-
-
-
-export default userRouter;

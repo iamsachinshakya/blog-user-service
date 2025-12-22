@@ -1,6 +1,4 @@
 import { z } from "zod";
-import { UserRole, UserStatus } from "../models/user.entity";
-
 /**
  * Schema: Update User
  * - All fields optional (for partial updates)
@@ -8,12 +6,6 @@ import { UserRole, UserStatus } from "../models/user.entity";
  */
 export const updateUserSchema = z
   .object({
-    email: z
-      .string()
-      .trim()
-      .email("Invalid email address")
-      .optional(),
-
     fullName: z
       .string()
       .trim()
@@ -25,12 +17,6 @@ export const updateUserSchema = z
       .string()
       .max(500, "Bio must be at most 500 characters long")
       .optional(),
-
-    role: z.enum(UserRole).optional(),
-
-    status: z.enum(UserStatus).optional(),
-
-    isVerified: z.boolean().optional(),
 
     socialLinks: z
       .object({

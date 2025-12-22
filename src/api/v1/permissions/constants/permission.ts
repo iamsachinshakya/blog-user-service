@@ -1,6 +1,9 @@
-import { UserRole } from "../../users/models/user.entity";
+import { UserRole } from "../../auth/models/auth.entity";
 
 export const PERMISSIONS = {
+    AUTH: {
+        CHANGE_PASSWORD: "user:change_password",
+    },
     USER: {
         CREATE: "user:create",
         READ: "user:read",
@@ -34,6 +37,7 @@ export const PERMISSIONS = {
  */
 export const RolePermissions: Record<UserRole, Set<string>> = {
     [UserRole.ADMIN]: new Set([
+        ...Object.values(PERMISSIONS.AUTH),
         ...Object.values(PERMISSIONS.USER),
         ...Object.values(PERMISSIONS.BLOG),
         ...Object.values(PERMISSIONS.CATEGORY),
@@ -60,5 +64,6 @@ export const RolePermissions: Record<UserRole, Set<string>> = {
         PERMISSIONS.BLOG.READ,
         PERMISSIONS.COMMENT.CREATE,
         PERMISSIONS.COMMENT.READ,
+        PERMISSIONS.AUTH.CHANGE_PASSWORD
     ]),
 };

@@ -1,8 +1,9 @@
+import { AuthStatus, UserRole } from "../../auth/models/auth.entity";
 import { ErrorCode } from "../../common/constants/errorCodes";
 import { IQueryParams, PaginatedData } from "../../common/models/common.dto";
 import { ApiError } from "../../common/utils/apiError";
 import { IFollowUser, IUpdateUser, IUserDashboard, IUserProfile } from "../models/user.dto";
-import { IUserEntity, UserRole, UserStatus } from "../models/user.entity";
+import { IUserEntity } from "../models/user.entity";
 import { IUserRepository } from "../repositories/user.repository.interface";
 import { uploadOnCloudinary } from "../utils/cloudinary.util";
 import { IUserService } from "./user.service.interface";
@@ -31,7 +32,7 @@ export class UserService implements IUserService {
       followingCount: counts?.followingCount ?? 0,
       postsCount: 0,
       role: UserRole.USER,
-      status: UserStatus.ACTIVE,
+      status: AuthStatus.ACTIVE,
       isVerified: false,
       username: "",
       email: "",
